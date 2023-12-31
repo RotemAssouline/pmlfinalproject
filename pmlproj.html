@@ -447,47 +447,51 @@ str(pml)</code></pre>
 <p>We shall not use the first 7 columns (index, timestamp columns and
 window number).</p>
 <pre class="r"><code>pml &lt;- pml[,8:dim(pml)[2]]</code></pre>
+<p>We split the data into training and validation sets:</p>
+<pre class="r"><code>  trainind &lt;- createDataPartition(pml$classe, p = .8, list = FALSE)
+  training &lt;- pml[trainind,]
+  validation &lt;- pml[-trainind,]</code></pre>
 <p>Next, we fit a random forest model to predict the outcome variable.
 We set the number of trees in the forest to 5, and perform 5-fold
 cross-validation.</p>
 <pre class="r"><code>tC &lt;- trainControl(method=&quot;cv&quot;, number=5, savePredictions = TRUE)
 rfmod &lt;- train(classe~.,
-                data = pml,
+                data = training,
                 method = &quot;rf&quot;,
                 ntree = 5,
                 trainControl = tC)
 rfmod</code></pre>
 <pre><code>## Random Forest 
 ## 
-## 19622 samples
+## 15699 samples
 ##    52 predictor
 ##     5 classes: &#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39; 
 ## 
 ## No pre-processing
 ## Resampling: Bootstrapped (25 reps) 
-## Summary of sample sizes: 19622, 19622, 19622, 19622, 19622, 19622, ... 
+## Summary of sample sizes: 15699, 15699, 15699, 15699, 15699, 15699, ... 
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy   Kappa    
-##    2    0.9622110  0.9521682
-##   27    0.9810738  0.9760530
-##   52    0.9728190  0.9656085
+##    2    0.9518429  0.9390429
+##   27    0.9745998  0.9678603
+##   52    0.9667549  0.9579342
 ## 
 ## Accuracy was used to select the optimal model using the largest value.
 ## The final value used for the model was mtry = 27.</code></pre>
-<p>Let us take a look at the confusion table and the in-sample error
+<p>Let us take a look at the confusion table and the out-of-sample error
 rate:</p>
-<pre class="r"><code>pred &lt;- predict.train(rfmod,pml)
-table(pred,pml$classe)</code></pre>
+<pre class="r"><code>pred &lt;- predict.train(rfmod,validation)
+table(pred,validation$classe)</code></pre>
 <pre><code>##     
 ## pred    A    B    C    D    E
-##    A 5575    2    0    0    0
-##    B    2 3792    2    2    1
-##    C    2    2 3414    4    0
-##    D    1    1    6 3210    3
-##    E    0    0    0    0 3603</code></pre>
-<pre class="r"><code>mean(pred == pml$classe)</code></pre>
-<pre><code>## [1] 0.998573</code></pre>
+##    A 1110   12    0    3    0
+##    B    5  741    9    2    3
+##    C    0    5  667    8    1
+##    D    0    0    8  629   10
+##    E    1    1    0    1  707</code></pre>
+<pre class="r"><code>mean(pred == validation$classe)</code></pre>
+<pre><code>## [1] 0.9824114</code></pre>
 </div>
 
 

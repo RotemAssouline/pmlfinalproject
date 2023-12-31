@@ -44,22 +44,30 @@ We shall not use the first 7 columns (index, timestamp columns and window number
 pml <- pml[,8:dim(pml)[2]]
 ```
 
+We split the data into training and validation sets:
+
+```{r split}
+  trainind <- createDataPartition(pml$classe, p = .8, list = FALSE)
+  training <- pml[trainind,]
+  validation <- pml[-trainind,]
+```
+
 Next, we fit a random forest model to predict the outcome variable. We set the number of trees in the forest to 5, and perform 5-fold cross-validation.
 
 ```{r fit, cache = TRUE}
 tC <- trainControl(method="cv", number=5, savePredictions = TRUE)
 rfmod <- train(classe~.,
-                data = pml,
+                data = training,
                 method = "rf",
                 ntree = 5,
                 trainControl = tC)
 rfmod
 ```
 
-Let us take a look at the confusion table and the in-sample error rate:
+Let us take a look at the confusion table and the out-of-sample error rate:
 
 ```{r check}
-pred <- predict.train(rfmod,pml)
-table(pred,pml$classe)
-mean(pred == pml$classe)
+pred <- predict.train(rfmod,validation)
+table(pred,validation$classe)
+mean(pred == validation$classe)
 ```
