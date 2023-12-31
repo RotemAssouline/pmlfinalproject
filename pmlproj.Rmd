@@ -1,0 +1,63 @@
+---
+title: "Final Assignment - Practical Machine Learning"
+author: "Rotem Assouline"
+date: "2023-12-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Introduction 
+
+In this project we analyse data from wearable devices in order to predict the manner in which participants preformed a dumbbell exercise. We load the dataset in perform a bit of preliminary processing:
+
+```{r load}
+library(caret)
+library(dplyr)
+set.seed(123)
+
+# read the file
+pml <- read.csv('pml-training.csv')
+
+names(pml) <- gsub('picth','pitch',names(pml))
+
+# change types of some columns
+pml$classe <- as.factor(pml$classe) 
+pml$user_name <- as.factor(pml$user_name)
+pml$new_window <- pml$new_window == 'yes'
+tonum <- (sapply(pml,class) %in% c('character','integer')) & (names(pml) != 'cvtd_timestamp')
+pml[,tonum] <- lapply(pml[,tonum],as.numeric) 
+
+# remove columns with missing values
+pml <- pml[,colSums(is.na(pml)) == 0] 
+
+str(pml)
+```
+
+We shall not use the first 7 columns (index, timestamp columns and window number).
+
+```{r removecols}
+pml <- pml[,8:dim(pml)[2]]
+```
+
+Next, we fit a random forest model to predict the outcome variable. We set the number of trees in the forest to 5, and perform 5-fold cross-validation.
+
+```{r fit, cache = TRUE}
+tC <- trainControl(method="cv", number=5, savePredictions = TRUE)
+rfmod <- train(classe~.,
+                data = pml,
+                method = "rf",
+                ntree = 5,
+                trainControl = tC)
+rfmod
+```
+
+Let us take a look at the confusion table and the in-sample error rate:
+
+```{r check}
+pred <- predict.train(rfmod,pml)
+table(pred,pml$classe)
+mean(pred == pml$classe)
+```
